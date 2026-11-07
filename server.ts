@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
+import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 
@@ -308,10 +309,22 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve('dist')));
-    app.get('*', (req, res) => {
-      res.sendFile(path.resolve('dist', 'index.html'));
-    });
+    const distIndex = path.resolve('dist', 'index.html');
+    if (fs.existsSync(distIndex)) {
+      app.use(express.static(path.resolve('dist')));
+      app.get('*', (req, res) => {
+        res.sendFile(distIndex);
+      });
+    } else {
+      app.get('/', (req, res) => {
+        res.json({
+          status: 'online',
+          service: 'Stake Bot Predictor API',
+          telegramActive: Boolean(BOT_TOKEN && CHAT_ID),
+          message: 'Backend server is running smoothly.'
+        });
+      });
+    }
   }
 
   app.listen(PORT, '0.0.0.0', () => {
